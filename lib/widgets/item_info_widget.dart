@@ -83,18 +83,45 @@ class ItemInfo extends ConsumerWidget {
 
               if (item.description!.isEmpty) return Container();
 
-              return ListTile(
-                title: Text(item.description ?? ''),
-                subtitle: const Text('Description'),
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: TextFormField(
+                  minLines: 5,
+                  maxLines: 10,
+                  initialValue: item.description ?? '',
+                  enabled: false,
+                  decoration: const InputDecoration(
+                    disabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    labelText: 'Item Description',
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    labelStyle: TextStyle(color: Colors.white),
+                  ),
+                ),
               );
+
             case 11:
               if (item.remarks == null) return Container();
 
               if (item.remarks!.isEmpty) return Container();
 
-              return ListTile(
-                title: Text(item.remarks ?? ''),
-                subtitle: const Text('Remarks'),
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: TextFormField(
+                  minLines: 5,
+                  maxLines: 10,
+                  initialValue: item.remarks ?? '',
+                  enabled: false,
+                  decoration: const InputDecoration(
+                    disabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    labelText: 'Remarks',
+                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                    labelStyle: TextStyle(color: Colors.white),
+                  ),
+                ),
               );
             default:
               return Container();

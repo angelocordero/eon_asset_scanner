@@ -59,10 +59,6 @@ class DatabaseAPI {
 
       await conn.connect();
 
-      // IResultSet result = await conn.execute('SELECT * FROM `assets` WHERE `asset_id`= :assetID and `is_enabled`= 1', {
-      //   "assetID": assetID,
-      // });
-
       IResultSet result = await conn.execute(''' 
  
  

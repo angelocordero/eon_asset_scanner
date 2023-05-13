@@ -104,7 +104,7 @@ class LoginScreen extends ConsumerWidget {
     EasyLoading.show();
 
     ConnectionSettings settings = ConnectionSettings(
-      host: '192.168.1.32',
+      host: '192.168.1.21',
       port: 3306,
       user: 'admin',
       password: 'admin',
