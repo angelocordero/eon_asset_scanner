@@ -1,5 +1,8 @@
-import 'package:eon_asset_scanner/core/database_api.dart';
+import 'package:eon_asset_scanner/core/utils.dart';
+
+import '../core/database_api.dart';
 import 'package:eon_asset_scanner/core/providers.dart';
+import 'package:eon_asset_scanner/widgets/overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,83 +36,46 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan Product'),
+        title: const Text('Scan QR Code'),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _scanner(context, ref),
-          _manualScan(context, ref),
+          _scanner(context),
+          _manualScan(context),
         ],
       ),
     );
   }
 
-  Visibility _scanner(BuildContext context, WidgetRef ref) {
+  Visibility _scanner(BuildContext context) {
+    double width = MediaQuery.of(context).size.width / 2;
+    double height = MediaQuery.of(context).size.height / 4 * 3 / 2;
+    double scanArea = width * 1.3;
+
     return Visibility(
       visible: MediaQuery.of(context).viewInsets.bottom == 0,
-      child: Flexible(
-        flex: 2,
-        child: MobileScanner(
-          controller: controller,
-          // allowDuplicates: false,
-          onDetect: (BarcodeCapture capture) async {
-            await controller.stop();
-            final Barcode code = capture.barcodes.first;
-            // ignore: use_build_context_synchronously
-            await _scanProduct(context, ref, code.rawValue);
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _manualScan(BuildContext context, WidgetRef ref) {
-    return Flexible(
-      flex: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Expanded(
+        child: Stack(
           children: [
-            const Text('Trouble scanning QR code?'),
-            const Text('Enter product ID manually.'),
-            Expanded(
-              flex: 1,
-              child: Center(
-                child: TextField(
-                  controller: _manualScanController,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    contentPadding: EdgeInsets.all(8.0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(12.0),
-                      ),
-                    ),
-                  ),
-                ),
+            MobileScanner(
+              scanWindow: Rect.fromCenter(
+                center: Offset(width, height),
+                width: scanArea + 50,
+                height: scanArea + 50,
               ),
+              controller: controller,
+              onDetect: (BarcodeCapture capture) async {
+                await controller.stop();
+
+                final Barcode code = capture.barcodes.first;
+                // ignore: use_build_context_synchronously
+                await _scanProduct(context, code.rawValue);
+              },
             ),
-            Expanded(
-              flex: 2,
-              child: Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () async {
-                    _scanProduct(
-                      context,
-                      ref,
-                      _manualScanController.text.trim(),
-                    );
-                  },
-                  child: const Text('Enter'),
-                ),
-              ),
+            QRScannerOverlay(
+              overlayColour: Colors.black.withOpacity(0.5),
+              scanArea: scanArea,
             ),
           ],
         ),
@@ -117,19 +83,69 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     );
   }
 
-  Future<void> _scanProduct(BuildContext context, WidgetRef ref, String? assetID) async {
+  Widget _manualScan(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MediaQuery.of(context).viewInsets.bottom == 0 ? MainAxisAlignment.spaceAround : MainAxisAlignment.start,
+        children: [
+          const Text('Trouble scanning QR code?'),
+          const SizedBox(height: 20),
+          const Text('Enter Asset ID manually.'),
+          const SizedBox(height: 20),
+          Center(
+            child: TextField(
+              controller: _manualScanController,
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.all(8.0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(8.0),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Center(
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () async {
+                _scanProduct(
+                  context,
+                  _manualScanController.text.trim(),
+                );
+              },
+              child: const Text('Scan'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _scanProduct(BuildContext context, String? assetID) async {
     if (assetID == null) return;
 
     try {
-      Item? item = await DatabaseAPI(ref.read(sqlSettingsProvider)).getItem(assetID);
+      EasyLoading.show();
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      Item? item = await DatabaseAPI.getItem(assetID);
+
       ref.read(itemProvider.notifier).state = item;
 
-      // await dispose();
-
+      EasyLoading.dismiss();
       // ignore: use_build_context_synchronously
-      Navigator.pop(context);
-    } catch (e) {
-      EasyLoading.showError(e.toString());
+      Navigator.pushReplacementNamed(context, 'home');
+    } catch (e, st) {
+      showErrorAndStacktrace(e, st);
     }
   }
 

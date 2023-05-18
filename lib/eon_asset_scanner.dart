@@ -28,10 +28,9 @@ class EonAssetScanner extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.dark,
-      home: const LoginScreen(),
       builder: EasyLoading.init(),
       routes: {
-        'login': (context) => const LoginScreen(),
+        '/': (context) => const LoginScreen(),
         'home': (context) => const HomeScreen(),
         'scan': (context) => const ScanScreen(),
       },

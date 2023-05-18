@@ -1,21 +1,18 @@
-import 'package:eon_asset_scanner/models/connection_settings_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/database_api.dart';
-import '../core/providers.dart';
 import '../core/utils.dart';
 import '../models/user_model.dart';
 
-class LoginScreen extends ConsumerWidget {
+class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
   static final TextEditingController usernameController = TextEditingController();
   static final TextEditingController passwordController = TextEditingController();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     usernameController.clear();
     passwordController.clear();
 
@@ -27,7 +24,7 @@ class LoginScreen extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('User Login'),
+                const Text('U S E R   L O G I N'),
                 const SizedBox(
                   height: 20,
                 ),
@@ -35,13 +32,13 @@ class LoginScreen extends ConsumerWidget {
                 const SizedBox(
                   height: 20,
                 ),
-                passwordField(context, ref),
+                passwordField(context),
                 const SizedBox(
                   height: 20,
                 ),
                 ElevatedButton(
                     onPressed: () async {
-                      await authenticate(context, ref);
+                      await authenticate(context);
                     },
                     child: const Text('Login')),
               ],
@@ -76,7 +73,7 @@ class LoginScreen extends ConsumerWidget {
     );
   }
 
-  Widget passwordField(BuildContext context, WidgetRef ref) {
+  Widget passwordField(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
@@ -89,10 +86,10 @@ class LoginScreen extends ConsumerWidget {
           width: 150,
           child: TextField(
             onSubmitted: (value) async {
-              await authenticate(context, ref);
+              await authenticate(context);
             },
             decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.all(8)),
-            obscureText: false,
+            obscureText: true,
             controller: passwordController,
           ),
         ),
@@ -100,18 +97,8 @@ class LoginScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> authenticate(BuildContext context, WidgetRef ref) async {
+  Future<void> authenticate(BuildContext context) async {
     EasyLoading.show();
-
-    ConnectionSettings settings = ConnectionSettings(
-      host: '192.168.1.21',
-      port: 3306,
-      user: 'admin',
-      password: 'admin',
-      database: 'eon',
-    );
-
-    ref.read(sqlSettingsProvider.notifier).state = settings;
 
     String username = usernameController.text.trim();
     String passwordHash = hashPassword(passwordController.text.trim());
@@ -119,18 +106,16 @@ class LoginScreen extends ConsumerWidget {
     User? user;
 
     try {
-      user = await DatabaseAPI(settings).authenticateUser(username, passwordHash);
+      user = await DatabaseAPI.authenticateUser(username, passwordHash);
     } catch (e) {
       debugPrint(e.toString());
       EasyLoading.showError(e.toString());
     }
 
     if (user == null) {
-      //EasyLoading.showError('user does not exist');
+      EasyLoading.showError('user does not exist');
       return;
     }
-
-    ref.read(userProvider.notifier).state = user;
 
     await EasyLoading.dismiss();
     // ignore: use_build_context_synchronously

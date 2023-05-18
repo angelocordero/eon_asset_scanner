@@ -1,26 +1,18 @@
-import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:eon_asset_scanner/core/constants.dart';
+import 'package:eon_asset_scanner/core/utils.dart';
 import 'package:mysql_client/mysql_client.dart';
 
-import '../models/connection_settings_model.dart';
 import '../models/item_model.dart';
 import '../models/user_model.dart';
 
 class DatabaseAPI {
-  DatabaseAPI(this.settings);
+  DatabaseAPI();
 
-  ConnectionSettings? settings;
-
-  Future<User?> authenticateUser(String username, String passwordHash) async {
-    if (settings == null) return null;
+  static Future<User?> authenticateUser(String username, String passwordHash) async {
+    MySQLConnection? conn;
 
     try {
-      MySQLConnection conn = await MySQLConnection.createConnection(
-        host: settings!.host,
-        port: settings!.port,
-        userName: settings!.user,
-        password: settings!.password,
-        databaseName: settings!.database,
-      );
+      conn = await createSqlConn();
 
       await conn.connect();
 
@@ -28,8 +20,6 @@ class DatabaseAPI {
         "username": username,
         "password": passwordHash,
       });
-
-      await conn.close();
 
       if (result.isNotEmpty) {
         ResultSetRow row = result.rows.first;
@@ -42,35 +32,29 @@ class DatabaseAPI {
       } else {
         return null;
       }
-    } catch (e) {
-      return Future.error(e.toString());
+    } catch (e, st) {
+      showErrorAndStacktrace(e, st);
+    } finally {
+      await conn?.close();
     }
+    return null;
   }
 
-  Future<Item?> getItem(String assetID) async {
+  static Future<Item?> getItem(String assetID) async {
+    MySQLConnection? conn;
+
     try {
-      MySQLConnection conn = await MySQLConnection.createConnection(
-        host: settings!.host,
-        port: settings!.port,
-        userName: settings!.user,
-        password: settings!.password,
-        databaseName: settings!.database,
-      );
+      conn = await createSqlConn();
 
       await conn.connect();
 
       IResultSet result = await conn.execute(''' 
- 
- 
-SELECT a.*, c.category_name, d.department_name  FROM `assets` AS a
-JOIN `categories` AS c ON a.category_id = c.category_id
-JOIN `departments` AS d ON a.department_id = d.department_id
-WHERE a.asset_id = :assetID
-  AND c.is_enabled = 1
-  AND d.is_enabled = 1;
-
- 
- ''', {
+        SELECT a.*, c.category_name, d.department_name  FROM `assets` AS a
+        JOIN `categories` AS c ON a.category_id = c.category_id
+        JOIN `departments` AS d ON a.department_id = d.department_id
+        WHERE a.asset_id = :assetID
+        AND c.is_enabled = 1
+        AND d.is_enabled = 1;''', {
         "assetID": assetID,
       });
 
@@ -95,11 +79,11 @@ WHERE a.asset_id = :assetID
         remarks: row.colByName('remarks').toString(),
       );
 
-      await conn.close();
-
       return item;
-    } catch (e) {
-      EasyLoading.showError(e.toString());
+    } catch (e, st) {
+      showErrorAndStacktrace(e, st);
+    } finally {
+      await conn?.close();
     }
 
     return null;
