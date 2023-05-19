@@ -30,9 +30,7 @@ class ItemInfo extends StatelessWidget {
               subtitle: const Text('Department'),
             );
           case 3:
-            if (item.personAccountable == null) return Container();
-
-            if (item.personAccountable!.isEmpty) return Container();
+            if (item.personAccountable == null || item.personAccountable!.isEmpty) return Container();
 
             return ListTile(
               title: Text(item.personAccountable ?? ''),
@@ -64,10 +62,10 @@ class ItemInfo extends StatelessWidget {
               subtitle: const Text('Price'),
             );
           case 8:
-            if (item.datePurchased == null) Container();
+            if (item.datePurchased == null) return Container();
 
             return ListTile(
-              title: Text(dateToString(item.datePurchased ?? DateTime.now())),
+              title: Text(dateToString(item.datePurchased!)),
               subtitle: const Text('Date Purchased'),
             );
           case 9:

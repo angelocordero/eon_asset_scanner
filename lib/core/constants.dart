@@ -5,16 +5,15 @@ import 'package:mysql_client/mysql_client.dart';
 
 BorderRadius defaultBorderRadius = BorderRadius.circular(8);
 
-
 Future<MySQLConnection> createSqlConn() async {
   try {
     return await MySQLConnection.createConnection(
-      host: '192.168.1.16',
+      host: '192.168.61.17',
       port: 3306,
-      userName: 'angelo',
-      password: 'cordero12',
+      userName: 'jekoy',
+      password: 'jekoyp@\$\$w0rd',
       databaseName: 'eon',
-      secure: false,
+      secure: true,
     );
   } catch (e, st) {
     return Future.error(e, st);
