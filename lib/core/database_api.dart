@@ -1,4 +1,3 @@
-import 'package:eon_asset_scanner/core/constants.dart';
 import 'package:eon_asset_scanner/core/utils.dart';
 import 'package:mysql_client/mysql_client.dart';
 
@@ -58,8 +57,8 @@ class DatabaseAPI {
         "assetID": assetID,
       });
 
-      if (result.isEmpty) {
-        return null;
+      if (result.rows.isEmpty) {
+        return await Future.error('No result');
       }
 
       ResultSetRow row = result.rows.first;
@@ -80,12 +79,10 @@ class DatabaseAPI {
       );
 
       return item;
-    } catch (e, st) {
-      showErrorAndStacktrace(e, st);
+    } catch (e) {
+      return await Future.error(e);
     } finally {
       await conn?.close();
     }
-
-    return null;
   }
 }

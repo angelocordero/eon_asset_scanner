@@ -66,11 +66,13 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
               ),
               controller: controller,
               onDetect: (BarcodeCapture capture) async {
+                EasyLoading.show();
+
                 await controller.stop();
 
                 final Barcode code = capture.barcodes.first;
                 // ignore: use_build_context_synchronously
-                await _scanProduct(context, code.rawValue);
+                _scanProduct(context, code.rawValue);
               },
             ),
             QRScannerOverlay(
@@ -117,10 +119,24 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                 ),
               ),
               onPressed: () async {
-                _scanProduct(
-                  context,
-                  _manualScanController.text.trim(),
-                );
+                String assetID = _manualScanController.text.trim();
+
+                if (assetID.isEmpty) return;
+
+                try {
+                  EasyLoading.show();
+                  await Future.delayed(const Duration(milliseconds: 500));
+
+                  Item? item = await DatabaseAPI.getItem(assetID);
+
+                  ref.read(itemProvider.notifier).state = item;
+
+                  EasyLoading.dismiss();
+                  // ignore: use_build_context_synchronously
+                  Navigator.pushReplacementNamed(context, 'home');
+                } catch (e, st) {
+                  showErrorAndStacktrace(e, st);
+                }
               },
               child: const Text('Scan'),
             ),
@@ -134,16 +150,16 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     if (assetID == null) return;
 
     try {
-      EasyLoading.show();
       await Future.delayed(const Duration(milliseconds: 500));
 
       Item? item = await DatabaseAPI.getItem(assetID);
 
       ref.read(itemProvider.notifier).state = item;
 
-      EasyLoading.dismiss();
+      await EasyLoading.dismiss();
       // ignore: use_build_context_synchronously
-      Navigator.pushReplacementNamed(context, 'home');
+      Navigator.pop(context);
+//Navigator.pushReplacementNamed(context, 'home');
     } catch (e, st) {
       showErrorAndStacktrace(e, st);
     }

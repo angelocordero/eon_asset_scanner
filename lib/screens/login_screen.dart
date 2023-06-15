@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
+import '../core/constants.dart';
 import '../core/database_api.dart';
 import '../core/utils.dart';
+import '../models/connection_settings_model.dart';
 import '../models/user_model.dart';
+import 'connection_settings_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -17,6 +20,50 @@ class LoginScreen extends StatelessWidget {
     passwordController.clear();
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.settings),
+        onPressed: () async {
+          ConnectionSettings connectionSettings;
+
+          try {
+            connectionSettings = ConnectionSettings(
+              databaseName: settingsBox.get('databaseName'),
+              ip: settingsBox.get('ip'),
+              port: settingsBox.get('port'),
+              username: settingsBox.get('username'),
+              password: settingsBox.get('password'),
+            );
+          } catch (e) {
+            connectionSettings = ConnectionSettings.empty();
+          }
+
+          // ignore: use_build_context_synchronously
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) {
+                return ConnectionSettingsScreen(
+                  localIPController: TextEditingController.fromValue(
+                    TextEditingValue(text: connectionSettings.ip),
+                  ),
+                  portController: TextEditingController.fromValue(
+                    TextEditingValue(text: connectionSettings.port.toString()),
+                  ),
+                  userController: TextEditingController.fromValue(
+                    TextEditingValue(text: connectionSettings.username),
+                  ),
+                  passwordController: TextEditingController.fromValue(
+                    TextEditingValue(text: connectionSettings.password),
+                  ),
+                  dbNameController: TextEditingController.fromValue(
+                    TextEditingValue(text: connectionSettings.databaseName),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
       body: Center(
         child: Card(
           child: Padding(
@@ -106,6 +153,14 @@ class LoginScreen extends StatelessWidget {
     User? user;
 
     try {
+      globalConnectionSettings = ConnectionSettings(
+        databaseName: settingsBox.get('databaseName'),
+        ip: settingsBox.get('ip'),
+        port: settingsBox.get('port'),
+        username: settingsBox.get('username'),
+        password: settingsBox.get('password'),
+      );
+
       user = await DatabaseAPI.authenticateUser(username, passwordHash);
     } catch (e) {
       debugPrint(e.toString());
