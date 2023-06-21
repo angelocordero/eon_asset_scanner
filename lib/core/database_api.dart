@@ -34,7 +34,9 @@ class DatabaseAPI {
     } catch (e, st) {
       showErrorAndStacktrace(e, st);
     } finally {
-      await conn?.close();
+      if (conn != null && conn.connected) {
+        await conn.close();
+      }
     }
     return null;
   }
@@ -47,14 +49,22 @@ class DatabaseAPI {
 
       await conn.connect();
 
-      IResultSet result = await conn.execute(''' 
+      IResultSet result = await conn.transactional((conn) async {
+        IResultSet buffer = await conn.execute(''' 
         SELECT a.*, c.category_name, d.department_name  FROM `assets` AS a
         JOIN `categories` AS c ON a.category_id = c.category_id
         JOIN `departments` AS d ON a.department_id = d.department_id
         WHERE a.asset_id = :assetID
         AND c.is_enabled = 1
         AND d.is_enabled = 1;''', {
-        "assetID": assetID,
+          "assetID": assetID,
+        });
+
+        await conn.execute('UPDATE assets SET last_scanned = CURDATE() WHERE `asset_id` = :assetID;', {
+          'assetID': assetID,
+        });
+
+        return buffer;
       });
 
       if (result.rows.isEmpty) {
@@ -82,7 +92,9 @@ class DatabaseAPI {
     } catch (e) {
       return await Future.error(e);
     } finally {
-      await conn?.close();
+      if (conn != null && conn.connected) {
+        await conn.close();
+      }
     }
   }
 }
